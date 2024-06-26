@@ -24,6 +24,8 @@ public interface CashuDB {
      */
     public fun insertProof(proof: Proof): Unit
 
+    public fun proofsForAmounts(amounts: List<ULong>): List<Proof>
+
     /**
      * Deletes a proof from the database.
      *

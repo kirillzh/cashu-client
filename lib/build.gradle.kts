@@ -9,56 +9,73 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT
 val libraryVersion: String by project
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.9.10"
+    kotlin("multiplatform") version "1.9.10"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10"
     id("org.gradle.java-library")
     id("org.gradle.maven-publish")
     id("org.jetbrains.dokka") version "1.9.10"
+    id("app.cash.sqldelight") version "2.0.2"
+}
+
+sqldelight {
+    databases {
+        create("Database") {
+            packageName.set("me.tb.cashulib")
+        }
+    }
 }
 
 repositories {
     mavenCentral()
 }
 
-dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
-    implementation("com.google.code.gson:gson:2.10.1")
+kotlin {
+    jvm {
+        testRuns["test"].executionTask.configure {
+            useJUnitPlatform()
+        }
+    }
 
-    // Bitcoin
-    implementation("fr.acinq.bitcoin:bitcoin-kmp-jvm:0.14.0")
-    implementation("fr.acinq.secp256k1:secp256k1-kmp-jni-jvm-darwin:0.11.0")
-    implementation("fr.acinq.lightning:lightning-kmp:1.5.15")
+    sourceSets {
+        commonMain {
+            dependencies {
+                // Kotlin
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
 
-    // Exposed
-    implementation("org.jetbrains.exposed:exposed-core:0.40.1")
-    implementation("org.jetbrains.exposed:exposed-dao:0.40.1")
-    implementation("org.jetbrains.exposed:exposed-jdbc:0.40.1")
-    implementation("org.jetbrains.exposed:exposed-java-time:0.40.1")
+                // Bitcoin
+                implementation("fr.acinq.bitcoin:bitcoin-kmp:0.14.0")
+                implementation("fr.acinq.secp256k1:secp256k1-kmp:0.11.0")
+                implementation("fr.acinq.lightning:lightning-kmp:1.5.15")
 
-    // SQLite
-    implementation("org.xerial:sqlite-jdbc:3.42.0.0")
+                // SqlDelight
+                implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
 
-    // Ktor
-    implementation("io.ktor:ktor-client-core-jvm:2.3.1")
-    implementation("io.ktor:ktor-client-okhttp:2.3.1")
-    implementation("io.ktor:ktor-client-logging:2.3.1")
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.1")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.1")
+                // Ktor
+                implementation("io.ktor:ktor-client-core:2.3.1")
+                implementation("io.ktor:ktor-client-logging:2.3.1")
+                implementation("io.ktor:ktor-client-content-negotiation:2.3.1")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.1")
 
-    // Logging
-    // TODO: The logging needs work.
-    implementation("org.slf4j:slf4j-api:1.7.30")
-    runtimeOnly("ch.qos.logback:logback-classic:1.4.12")
+                // Logging
+                implementation("co.touchlab:kermit:2.0.4")
+            }
+        }
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
-}
+        jvmMain {
+            dependencies {
+                // Bitcoin
+                implementation("fr.acinq.secp256k1:secp256k1-kmp-jni-jvm:0.11.0")
 
-testing {
-    suites {
-        // Configure the built-in test suite
-        val test by getting(JvmTestSuite::class) {
-            // Use Kotlin Test test framework
-            useKotlinTest("1.9.10")
+                // Ktor OkHttp engine
+                implementation("io.ktor:ktor-client-okhttp:2.3.1")
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+            }
         }
     }
 }
@@ -76,7 +93,7 @@ tasks.withType<Test> {
 // Apply a specific Java toolchain to ease working on different environments.
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
@@ -98,7 +115,7 @@ publishing {
 
 tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
     dokkaSourceSets {
-        named("main") {
+        named("commonMain") {
             moduleName.set("cashu-client")
             moduleVersion.set(libraryVersion)
             // includes.from("Module.md")
