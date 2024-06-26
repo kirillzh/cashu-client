@@ -9,7 +9,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT
 val libraryVersion: String by project
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.9.10"
+    kotlin("multiplatform") version "1.9.10"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10"
     id("org.gradle.java-library")
     id("org.gradle.maven-publish")
@@ -29,36 +29,53 @@ repositories {
     mavenCentral()
 }
 
-dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
+kotlin {
+    jvm {
+        testRuns["test"].executionTask.configure {
+            useJUnitPlatform()
+        }
+    }
 
-    // Bitcoin
-    implementation("fr.acinq.bitcoin:bitcoin-kmp-jvm:0.14.0")
-    implementation("fr.acinq.secp256k1:secp256k1-kmp-jni-jvm-darwin:0.11.0")
-    implementation("fr.acinq.lightning:lightning-kmp:1.5.15")
+    sourceSets {
+        commonMain {
+            dependencies {
+                // Kotlin
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
 
-    // SqlDelight
-    implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
+                // Bitcoin
+                implementation("fr.acinq.bitcoin:bitcoin-kmp:0.14.0")
+                implementation("fr.acinq.secp256k1:secp256k1-kmp:0.11.0")
+                implementation("fr.acinq.lightning:lightning-kmp:1.5.15")
 
-    // Ktor
-    implementation("io.ktor:ktor-client-core-jvm:2.3.1")
-    implementation("io.ktor:ktor-client-okhttp:2.3.1")
-    implementation("io.ktor:ktor-client-logging:2.3.1")
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.1")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.1")
+                // SqlDelight
+                implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
 
-    // Logging
-    implementation("co.touchlab:kermit:2.0.4")
+                // Ktor
+                implementation("io.ktor:ktor-client-core:2.3.1")
+                implementation("io.ktor:ktor-client-logging:2.3.1")
+                implementation("io.ktor:ktor-client-content-negotiation:2.3.1")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.1")
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
-}
+                // Logging
+                implementation("co.touchlab:kermit:2.0.4")
+            }
+        }
 
-testing {
-    suites {
-        // Configure the built-in test suite
-        val test by getting(JvmTestSuite::class) {
-            // Use Kotlin Test test framework
-            useKotlinTest("1.9.10")
+        jvmMain {
+            dependencies {
+                // Bitcoin
+                implementation("fr.acinq.secp256k1:secp256k1-kmp-jni-jvm:0.11.0")
+
+                // Ktor OkHttp engine
+                implementation("io.ktor:ktor-client-okhttp:2.3.1")
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+            }
         }
     }
 }
@@ -98,7 +115,7 @@ publishing {
 
 tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
     dokkaSourceSets {
-        named("main") {
+        named("commonMain") {
             moduleName.set("cashu-client")
             moduleVersion.set(libraryVersion)
             // includes.from("Module.md")

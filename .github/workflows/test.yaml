@@ -22,4 +22,4 @@ jobs:
           java-version: 17
 
       - name: "Run tests"
-        run: ./gradlew test --console=plain
+        run: ./gradlew jvmTest --console=plain

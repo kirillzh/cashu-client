@@ -1,9 +1,9 @@
 package me.tb.cashuclient.db
 
 import me.tb.cashuclient.types.Proof
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
+import kotlin.test.Test
 import kotlin.test.assertContentEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class SQLiteDBTest {
@@ -66,7 +66,7 @@ class SQLiteDBTest {
         db.deleteProof(proof1)
 
         // No longer able to look up a proof by its amount
-        assertThrows<Throwable> {
+        assertFailsWith<Throwable> {
             println(db.proofsForAmounts(listOf(proof1.amount)))
         }
     }
